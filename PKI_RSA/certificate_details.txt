@@ -1,17 +1,17 @@
 ----- CA Certificate Details -----
 Subject: C=TN,ST=Nabeul,L=Nabeul,O=My Company,CN=My Company CA
 Issuer: C=TN,ST=Nabeul,L=Nabeul,O=My Company,CN=My Company CA
-Serial Number: 632959242494001419886029995410366201937437337219
-Not Before: 2024-07-16 13:05:19
-Not After: 2025-07-16 13:05:19
+Serial Number: 479129239884851114453737267218620710112469447504
+Not Before: 2024-07-24 09:22:50
+Not After: 2025-07-24 09:22:50
 Extensions:
   <ObjectIdentifier(oid=2.5.29.19, name=basicConstraints)>: <BasicConstraints(ca=True, path_length=None)>
 
 ----- User Certificate Details -----
 Subject: C=TN,ST=Nabeul,L=Nabeul,O=My Company,CN=My Company CA
 Issuer: C=TN,ST=Nabeul,L=Nabeul,O=My Company,CN=My Company CA
-Serial Number: 93189047828170177151862997898596595470435143059
-Not Before: 2024-07-16 13:05:19
-Not After: 2025-07-16 13:05:19
+Serial Number: 87195855189027109454609800165893131484034855976
+Not Before: 2024-07-24 09:22:50
+Not After: 2025-07-24 09:22:50
 Extensions:
   <ObjectIdentifier(oid=2.5.29.19, name=basicConstraints)>: <BasicConstraints(ca=False, path_length=None)>
