@@ -1,8 +1,10 @@
-#NFC Secure Communication Project
-##Overview:
+# NFC Secure Communication Project
+## Overview
+
 This project implements a secure data exchange system between two NFC-enabled devices using asymmetric encryption. The application is simulated in a Linux environment using Inter-Process Communication (IPC) to ensure bidirectional encrypted communication.
 
-##Technologies Used
+## Technologies Used
+
 Python: Programming language used for implementing the application.
 Cryptography Library: For cryptographic operations, including RSA encryption and PKI management.
 Flask: For creating the Certificate Authority (CA) server that issues and manages certificates.
