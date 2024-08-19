@@ -82,7 +82,7 @@ print(response.json())
 #Mutual Authentification using certif
 
 
-# Fget Device A certificate from CA server
+# get Device A certificate from CA server
 device_A_certificate_pem = None
 for _ in range(5):
     device_A_certificate_response = requests.get('http://localhost:5001/get_certificate', params={'device_name': 'Device_A'})
@@ -97,7 +97,7 @@ if not device_A_certificate_pem:
 
     
 
-# Mutual Authentication using certificates
+
 # Send Device B certificate to CA server for authentication
 auth_response = requests.post("http://localhost:5001/authenticate_device_B", json={
     "Device_B_certificate": signed_cert_pem_B
@@ -151,16 +151,12 @@ def receive_and_decrypt_message(queue, private_key):
  
 
 
-# IPC message queue keys
+
 key_A = 1234  
 key_B = 5678
 
-# Create message queues
 message_queue_B = sysv_ipc.MessageQueue(key_B, sysv_ipc.IPC_CREAT)
 message_queue_A = sysv_ipc.MessageQueue(key_A, sysv_ipc.IPC_CREAT)
-
-
-
 
 while True:
     # Receive and decrypt messages
