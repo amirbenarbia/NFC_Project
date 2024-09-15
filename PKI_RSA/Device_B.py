@@ -79,7 +79,6 @@ print("certif B sent")
 print(response.json())
 
 
-#Mutual Authentification using certif
 
 
 # get Device A certificate from CA server
@@ -102,6 +101,7 @@ if not device_A_certificate_pem:
 auth_response = requests.post("http://localhost:5001/authenticate_device_B", json={
     "Device_B_certificate": signed_cert_pem_B
 })
+print("Authentication req sent")
 
 auth_response_data = auth_response.json() 
 print(f"Authentication response: {auth_response.json()}")

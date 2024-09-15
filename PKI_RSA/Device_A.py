@@ -86,7 +86,7 @@ for _ in range(5):
         device_B_certificate_pem = device_B_certificate_response.json().get('certificate')
         print('certif B loaded')
         break
-    time.sleep(2)  # wait for 2 seconds before retrying
+    time.sleep(2)  
 
 if not device_B_certificate_pem:
     raise Exception("Failed to fetch Device B certificate")
@@ -96,6 +96,7 @@ if not device_B_certificate_pem:
 auth_response = requests.post("http://localhost:5001/authenticate_device_A", json={
     "Device_A_certificate": signed_cert_pem_A
 })
+#print("Authentication req sent")
 auth_response_data = auth_response.json() 
 print(f"Authentication response: {auth_response.json()}")
 
@@ -165,7 +166,7 @@ while True:
     message_queue_A.send(encrypted_message_A)
     print("Encrypted data sent successfully.")
     
-    time.sleep(1)    # Receive and decrypt messages
+    time.sleep(1)    
     receive_and_decrypt_message(message_queue_B, Device_A_private_key)
     #time.sleep(1)
 
