@@ -79,8 +79,6 @@ logging.debug("CA private key and certificate created and saved.")
 
 
 
-
-
 @app.route('/sign_csr',methods=['POST']) 
 def sign_csr():
     csr_pem = request.json['csr'] # to extract pem data 
@@ -107,6 +105,7 @@ def sign_csr():
     device_certificates[device_name] = device_cert_pem
 
     logging.info(f"CSR signed successfully for {device_name}.")
+
     return jsonify({'certificate': device_cert_pem})
 
 
@@ -124,6 +123,7 @@ def send_certificate():
     device_certificates[device_name] = cert_pem
     device_public_keys[device_name] = public_key_pem  # Save the public key as well
     logging.info(f"Certificate and public key for {device_name} stored successfully.")
+    
     return jsonify({'status': 'success', 'message': f'{device_name} certificate and public key stored successfully.'})
 
 
@@ -159,7 +159,7 @@ def authenticate_device_A():
             device_A_cert.signature_hash_algorithm,
         )
 
-        # Get Device B's public key
+        # Get Device B public key
         device_B_public_key_pem = device_public_keys.get('Device_B')
         if not device_B_public_key_pem:
             return jsonify({'status': 'failure', 'error': 'Device B public key not found.'})
@@ -199,7 +199,8 @@ def authenticate_device_B():
     except Exception as e:
         return jsonify({'status': 'failure', 'error': str(e)})
     
-  
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
 
