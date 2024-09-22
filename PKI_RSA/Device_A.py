@@ -11,7 +11,7 @@ import requests
 import time
 import logging
 import sys
-
+import os
 
 
 # Generate keys
@@ -62,51 +62,39 @@ else:
 
 print("Device private key and signed certificate saved.")
 
+time.sleep(4)
+
+
+try:
+    with open("Device_B_certificate.pem", "r") as cert_file:
+        Device_B_certificate_pem = cert_file.read()
+except FileNotFoundError:
+    print("Device B's certificate file not found.")
+    sys.exit(1)
+
+try:
+    with open("ca_public_key.pem", "rb") as ca_public_key_file:
+        ca_public_key = serialization.load_pem_public_key(
+            ca_public_key_file.read(),
+            backend=default_backend()
+        )
+except FileNotFoundError:
+    print("CA's public key file not found.")
+    sys.exit(1)
 
 
 
-# Send Device A certificate and public key to CA server
-response = requests.post('http://localhost:5001/send_certificate', json={
-    'device_name': 'Device_A',
-    'certificate': signed_cert_pem_A,
-    'public_key': Device_A_public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    ).decode()
-})
-print("certif A sent")
-print(response.json())
+# After fetching Device B's certificate, verify it using the CA's public key
+device_B_cert = x509.load_pem_x509_certificate(Device_B_certificate_pem.encode(), default_backend())
+ca_public_key.verify(
+    device_B_cert.signature,
+    device_B_cert.tbs_certificate_bytes,
+    padding.PKCS1v15(),
+    device_B_cert.signature_hash_algorithm, 
+)
 
-
-# get Device B certificate from CA server
-device_B_certificate_pem = None
-for _ in range(5):
-    device_B_certificate_response = requests.get('http://localhost:5001/get_certificate', params={'device_name': 'Device_B'})
-    if device_B_certificate_response.status_code == 200:
-        device_B_certificate_pem = device_B_certificate_response.json().get('certificate')
-        print('certif B loaded')
-        break
-    time.sleep(2)  
-
-if not device_B_certificate_pem:
-    raise Exception("Failed to fetch Device B certificate")
-
-
-# Mutual Authentication using certificates
-auth_response = requests.post("http://localhost:5001/authenticate_device_A", json={
-    "Device_A_certificate": signed_cert_pem_A
-})
-#print("Authentication req sent")
-auth_response_data = auth_response.json() 
-print(f"Authentication response: {auth_response.json()}")
-
-if auth_response_data.get('status') == 'success':
-    device_B_public_key_pem = auth_response_data.get('device_B_public_key')
-    device_B_public_key = serialization.load_pem_public_key(device_B_public_key_pem.encode(), backend=default_backend())
-    print('B public key loaded')
-else:
-    raise Exception("Authentication failed. Cannot proceed.")
-
+device_B_public_key = device_B_cert.public_key()  # Extract Device B's public key for future use
+print("Device B certificate verified and public key loaded.")
 
 
 

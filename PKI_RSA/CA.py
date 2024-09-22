@@ -78,6 +78,17 @@ with open("ca_certificate.pem", "wb") as f:
 logging.debug("CA private key and certificate created and saved.")
 
 
+# Save CA public key to a separate PEM file
+with open("ca_public_key.pem", "wb") as f:
+    f.write(
+        ca_public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+    )
+
+print("CA public key saved as ca_public_key.pem.")
+
 
 @app.route('/sign_csr',methods=['POST']) 
 def sign_csr():
@@ -107,98 +118,6 @@ def sign_csr():
     logging.info(f"CSR signed successfully for {device_name}.")
 
     return jsonify({'certificate': device_cert_pem})
-
-
-
-@app.route('/send_certificate', methods=['POST'])
-def send_certificate():
-    data = request.json
-    device_name = data.get('device_name')
-    cert_pem = data.get('certificate')
-    public_key_pem = data.get('public_key')  
-
-    if not device_name or not cert_pem or not public_key_pem:
-        return jsonify({'status': 'failure', 'message': 'Device name, certificate, and public key must be provided.'})
-
-    device_certificates[device_name] = cert_pem
-    device_public_keys[device_name] = public_key_pem  # Save the public key as well
-    logging.info(f"Certificate and public key for {device_name} stored successfully.")
-    
-    return jsonify({'status': 'success', 'message': f'{device_name} certificate and public key stored successfully.'})
-
-
-@app.route('/get_certificate', methods=['GET'])
-def get_certificate():
-    device_name = request.args.get('device_name')
-    cert_pem = device_certificates.get(device_name)
-    if cert_pem:
-        logging.info(f"Certificate for {device_name} retrieved successfully.")
-        return jsonify({'certificate': cert_pem})
-    else:
-        logging.warning(f"Certificate for {device_name} not found.")
-        return jsonify({'message': 'Certificate not found'}), 404
-
-
-@app.route('/authenticate_device_A', methods=['POST'])
-def authenticate_device_A():
-    request_data = request.json
-    device_A_cert_pem = request_data.get('Device_A_certificate')
-
-    if not device_A_cert_pem:
-        return jsonify({'status': 'failure', 'error': 'Device_A_certificate is required.'})
-
-    try:
-        device_A_cert = x509.load_pem_x509_certificate(device_A_cert_pem.encode(), default_backend())
-        #device_A_name = device_A_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-
-        # Verify Device A's certificate
-        ca_public_key.verify(
-            device_A_cert.signature,
-            device_A_cert.tbs_certificate_bytes,
-            padding.PKCS1v15(),
-            device_A_cert.signature_hash_algorithm,
-        )
-
-        # Get Device B public key
-        device_B_public_key_pem = device_public_keys.get('Device_B')
-        if not device_B_public_key_pem:
-            return jsonify({'status': 'failure', 'error': 'Device B public key not found.'})
-
-        return jsonify({'status': 'success', 'device_B_public_key': device_B_public_key_pem})
-
-    except Exception as e:
-        return jsonify({'status': 'failure', 'error': str(e)})
-
-@app.route('/authenticate_device_B', methods=['POST'])
-def authenticate_device_B():
-    request_data = request.json
-    device_B_cert_pem = request_data.get('Device_B_certificate')
-
-    if not device_B_cert_pem:
-        return jsonify({'status': 'failure', 'error': 'Device_B_certificate is required.'})
-
-    try:
-        device_B_cert = x509.load_pem_x509_certificate(device_B_cert_pem.encode(), default_backend())
-        #device_B_name = device_B_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-
-        # Verify Device B's certificate
-        ca_public_key.verify(
-            device_B_cert.signature,
-            device_B_cert.tbs_certificate_bytes,
-            padding.PKCS1v15(),
-            device_B_cert.signature_hash_algorithm,
-        )
-
-        # Get Device A's public key
-        device_A_public_key_pem = device_public_keys.get('Device_A')
-        if not device_A_public_key_pem:
-            return jsonify({'status': 'failure', 'error': 'Device A public key not found.'})
-
-        return jsonify({'status': 'success', 'device_A_public_key': device_A_public_key_pem})
-
-    except Exception as e:
-        return jsonify({'status': 'failure', 'error': str(e)})
-    
 
 
 if __name__ == '__main__':

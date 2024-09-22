@@ -7,9 +7,13 @@ from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.x509 import random_serial_number
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import dh
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import requests
 import time
 import logging
+import os 
+
 
 # Generate keys
 Device_B_private_key = rsa.generate_private_key(
@@ -63,55 +67,44 @@ else:
 
 print("Device private key and signed certificate saved.")
 
-
-
-
-# Send Device B certificate and public key to CA server
-response = requests.post('http://localhost:5001/send_certificate', json={
-    'device_name': 'Device_B',
-    'certificate': signed_cert_pem_B,
-    'public_key': Device_B_public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    ).decode()
-})
-print("certif B sent")
-print(response.json())
+time.sleep(4)
 
 
 
 
-# get Device A certificate from CA server
-device_A_certificate_pem = None
-for _ in range(5):
-    device_A_certificate_response = requests.get('http://localhost:5001/get_certificate', params={'device_name': 'Device_A'})
-    if device_A_certificate_response.status_code == 200:
-        device_A_certificate_pem = device_A_certificate_response.json().get('certificate')
-        print('certif A loaded')
-        break
-    time.sleep(2)  # wait for 2 seconds before retrying
-
-if not device_A_certificate_pem:
-    raise Exception("Failed to fetch Device A certificate")
-
-    
+try:
+    with open("Device_A_certificate.pem", "r") as cert_file:
+        Device_A_certificate_pem = cert_file.read()
+except FileNotFoundError:
+    print("Device A's certificate file not found.")
+    sys.exit(1)
 
 
-# Send Device B certificate to CA server for authentication
-auth_response = requests.post("http://localhost:5001/authenticate_device_B", json={
-    "Device_B_certificate": signed_cert_pem_B
-})
-print("Authentication req sent")
 
-auth_response_data = auth_response.json() 
-print(f"Authentication response: {auth_response.json()}")
 
-if auth_response_data.get('status') == 'success':
-    device_A_public_key_pem = auth_response_data.get('device_A_public_key')
-    device_A_public_key = serialization.load_pem_public_key(device_A_public_key_pem.encode(), backend=default_backend())
-    print('A public key loaded')
-else:
-    raise Exception("Authentication failed. Cannot proceed.")
+try:
+    with open("ca_public_key.pem", "rb") as ca_public_key_file:
+        ca_public_key = serialization.load_pem_public_key(
+            ca_public_key_file.read(),
+            backend=default_backend()
+        )
+except FileNotFoundError:
+    print("CA's public key file not found.")
+    sys.exit(1)
+
+
+# After fetching Device A's certificate, verify it using the CA's public key
+device_A_cert = x509.load_pem_x509_certificate(Device_A_certificate_pem.encode(), default_backend())
+ca_public_key.verify(
+    device_A_cert.signature,
+    device_A_cert.tbs_certificate_bytes,
+    padding.PKCS1v15(),
+    device_A_cert.signature_hash_algorithm,
+)
+
+device_A_public_key = device_A_cert.public_key()  # Extract Device A's public key for future use
+print("Device A certificate verified and public key loaded.")
+
 
 
 def encrypt_and_send_data(data, device_A_public_key):
